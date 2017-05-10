@@ -1,5 +1,6 @@
 #include "Arduino.h"
 #include "clock.h"
+
 #include <DS1302.h>
 #include <SD.h>
 
@@ -73,7 +74,7 @@ void cclass::PRINT_TIME() {
 }
 
 void cclass::getNumbers(int h1, int h2, int m1, int m2) {
-  File myFile = SD.open("clock.txt", FILE_READ);
+  File myFile = SD.open("CLOCK.TXT", FILE_READ);
   if (myFile) {
     int chPos = 0;
 

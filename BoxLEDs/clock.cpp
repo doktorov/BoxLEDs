@@ -2,7 +2,7 @@
 #include "clock.h"
 
 #include <DS1302.h>
-#include <SD.h>
+#include "SdFat.h"
 
 // Часы DS1302
 #define CLOCK_CLK A2
@@ -148,5 +148,7 @@ void cclass::showH(char h1[65], int pos) {
 }
 
 cclass clockMatrix = cclass();
+
+
 
 

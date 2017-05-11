@@ -5,6 +5,7 @@
 #include <SPI.h>
 #include <Adafruit_GFX.h>
 #include <Max72xxPanel.h>
+#include "SdFat.h"
 
 // CLK - 13, CS - 10, DN - 11
 #define PANEL884_CS   10
@@ -14,6 +15,7 @@
 class cclass {
   private:
     Max72xxPanel matrix = Max72xxPanel(PANEL884_CS, PANEL884_NHD, PANEL884_NVD);
+    SdFat SD;
 
     boolean time_blink;
     int time_min;

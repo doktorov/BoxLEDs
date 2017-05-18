@@ -3,7 +3,6 @@
 
 #include <Adafruit_NeoPixel.h>
 #include <Keypad.h>
-//#include <TTP229.h>
 
 // RGB 8x8
 #define RGB_PIN         A0
@@ -34,13 +33,7 @@ unsigned int soundWhile;
 #define BTN44_SCL_PIN   2
 #define BTN44_SDO_PIN   3
 
-//TTP229 ttp229(BTN44_SCL_PIN, BTN44_SDO_PIN);
-
-//uint8_t keyboard = 0;
-
 //
-#define MATRIX_WAIT 50
-
 int matrixWait;
 int matrixPos;
 uint32_t first;
@@ -50,11 +43,6 @@ uint32_t second;
 #define RING_WAIT 2
 int ringPos;
 
-//
-#define KEYBOARD_SCL_PIN 2
-#define KEYBOARD_SDO_PIN 3
-
-//byte keyboard;
 char sel_matrix_keyboard;
 
 //
@@ -89,7 +77,7 @@ void setup() {
   sample = 0;
   soundWhile = 0;
 
-  matrixWait = MATRIX_WAIT;
+  matrixWait = 0;
   matrixPos = 0;
   first = 0;
   second = 0;
@@ -111,7 +99,7 @@ void loop() {
   if (customKey) {
     sel_matrix_keyboard = customKey;
 
-    matrixWait == MATRIX_WAIT;
+    matrixWait == 0;
     matrixPos = 0;
     ringPos = 0;
   }
@@ -124,10 +112,10 @@ void loop() {
       heart("BOX.TXT", 126, 10);
       break;
     case 'B':
-      randomMatrix();
+      rainbowMatrix();      
       break;
     case 'C':
-      rainbowMatrix();
+      randomMatrix();
       break;
     case 'D':
       equalizer();

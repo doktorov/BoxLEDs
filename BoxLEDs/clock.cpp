@@ -10,7 +10,7 @@
 #define CLOCK_RST A4
 
 // SD
-#define SD_CS   4
+#define SD_CS   35
 
 cclass::cclass() {
 

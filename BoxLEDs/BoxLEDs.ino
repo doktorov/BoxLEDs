@@ -1,9 +1,9 @@
 #include "clock.h"
+#include "matrix.h"
 
-#include <SPI.h>
-#include <Adafruit_GFX.h>
 #include <Adafruit_NeoPixel.h>
-#include <TTP229.h>
+#include <Keypad.h>
+//#include <TTP229.h>
 
 // RGB 8x8
 #define RGB_PIN         A0
@@ -11,6 +11,14 @@
 #define RGB_BRIGHTNESS  10
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(RGB_NUMPIXELS, RGB_PIN, NEO_GRB + NEO_KHZ800);
+//
+
+//
+#define RGB_RINGS_PIN         A1
+#define RGB_RINGS_NUMPIXELS   61
+#define RGB_RINGS_BRIGHTNESS  10
+
+Adafruit_NeoPixel rings = Adafruit_NeoPixel(RGB_RINGS_NUMPIXELS, RGB_RINGS_PIN, NEO_GRB + NEO_KHZ800);
 //
 
 //
@@ -26,104 +34,163 @@ unsigned int soundWhile;
 #define BTN44_SCL_PIN   2
 #define BTN44_SDO_PIN   3
 
-TTP229 ttp229(BTN44_SCL_PIN, BTN44_SDO_PIN);
+//TTP229 ttp229(BTN44_SCL_PIN, BTN44_SDO_PIN);
 
-uint8_t keyboard = 0;
+//uint8_t keyboard = 0;
+
+//
+#define MATRIX_WAIT 50
+
+int matrixWait;
+int matrixPos;
+uint32_t first;
+uint32_t second;
+
+//
+#define RING_WAIT 2
+int ringPos;
+
+//
+#define KEYBOARD_SCL_PIN 2
+#define KEYBOARD_SDO_PIN 3
+
+//byte keyboard;
+char sel_matrix_keyboard;
+
+//
+#define KEYBOARD_ROWS   4
+#define KEYBOARD_COLS   4
+
+char hexaKeys[KEYBOARD_ROWS][KEYBOARD_COLS] = {
+  {'1','4','7','*'},
+  {'2','5','8','0'},
+  {'3','6','9','#'},
+  {'A','B','C','D'}
+};
+byte rowPins[KEYBOARD_ROWS] = {25, 24, 23, 22};
+byte colPins[KEYBOARD_COLS] = {29, 28, 27, 26};
+
+Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, KEYBOARD_ROWS, KEYBOARD_COLS); 
 
 void setup() {
   Serial.begin(9600);
 
   clockMatrix.SETUP();
+  matrixFromFile.SETUP();
 
   pixels.setBrightness(RGB_BRIGHTNESS);
   pixels.begin();
   pixels.show();
 
+  rings.setBrightness(RGB_RINGS_BRIGHTNESS);
+  rings.begin();
+  rings.show();
+
   sample = 0;
   soundWhile = 0;
+
+  matrixWait = MATRIX_WAIT;
+  matrixPos = 0;
+  first = 0;
+  second = 0;
+
+  ringPos = 0;
+
+  sel_matrix_keyboard = 0;
+
+  pinMode(34, OUTPUT);
+  pinMode(33, INPUT_PULLUP);
+  pinMode(32, INPUT_PULLUP);
+  pinMode(31, INPUT_PULLUP);
+  pinMode(30, INPUT_PULLUP);
+  digitalWrite(34, LOW);
 }
 
 int start1_i = 0;
 
 void loop() {
-  uint8_t sel_keyboard = ttp229.GetKey16();
-  if (sel_keyboard) {
-    if (keyboard != sel_keyboard) {
-      keyboard = sel_keyboard;
-      start1_i = -1;
-    }
+  char customKey = customKeypad.getKey();  
+  if (customKey){
+    sel_matrix_keyboard = customKey;
+    Serial.println(customKey);
   }
-
-  //Serial.println(String(keyboard) + " - " + String(sleep));
-
-  switch (keyboard) {
-    case 1:
+  
+  switch (sel_matrix_keyboard) {
+    case '1':
       heart();
       break;
-    case 2:
-      start1();
+    case 'B':
+      randomMatrix();
       break;
-    case 16:
+    case 'C':
+      rainbowMatrix();
+      break;
+    case 'D':
       equalizer();
       break;
     default:
-      heart();
+      rainbowMatrix();
       break;
   }
 
+  rainbowRings();
+
   clockMatrix.PRINT_TIME();
+
+  Serial.print(digitalRead(32));
+  Serial.print(digitalRead(33)); 
+  Serial.print(digitalRead(30));
+  Serial.println(digitalRead(31));
 
   delay(1);
 }
 
-typedef bool charMapType[8][8];
-
-const charMapType heart4 = {
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {0, 0, 0, 1, 1, 0, 0, 0},
-  {0, 0, 1, 1, 1, 1, 0, 0},
-  {0, 1, 1, 1, 1, 1, 1, 0},
-  {1, 1, 1, 1, 1, 1, 1, 1},
-  {1, 1, 1, 1, 1, 1, 1, 1},
-  {1, 1, 1, 1, 1, 1, 1, 1},
-  {0, 1, 1, 0, 0, 1, 1, 0}
-};
-
 void heart() {
-  int z = 0;
+  if (matrixWait == MATRIX_WAIT) {
+    char *p;
+    p = matrixFromFile.GET(matrixPos);
 
-  for (int x = 0; x < 8; x++) {
-    for (int y = 0; y < 8; y++) {
-      bool v = (heart4)[y][x];
+    if (matrixPos == 0) {
+      int r = random(0, 255);
+      int g = random(0, 255);
+      int b = random(0, 255);
+      first = pixels.Color(r, g, b);
 
-      if (v) {
-        pixels.setPixelColor(z, pixels.Color(255, 0, 0));
-      } else {
-        pixels.setPixelColor(z, pixels.Color(0, 0, 255));
-      }
-
-      z++;
+      r = random(0, 255);
+      g = random(0, 255);
+      b = random(0, 255);
+      second = pixels.Color(r, g, b);
     }
-  }
 
-  pixels.show();
-}
+    matrixPos++;
+    if (matrixPos == 19) {
+      matrixPos = 0;
+    }
 
-void start1() {
-  //Serial.println("start1");
+    int z = 0;
+    for (int x = 0; x < 8; x++) {
+      for (int y = 0; y < 8; y++) {
+        int val = int(*(p + z) - '0');
 
-  if (start1_i < RGB_NUMPIXELS) {
-    start1_i++;
+        switch (val) {
+          case 1:
+            pixels.setPixelColor(z, first);
+            break;
+          default:
+            pixels.setPixelColor(z, second);
+            break;
+        }
+
+        z++;
+      }
+    }
+
+    matrixWait = 0;
+
+    pixels.show();
   } else {
-    start1_i = 0;
+    matrixWait++;
   }
-
-  int r = random(0, 255);
-  int g = random(0, 255);
-  int b = random(0, 255);
-
-  pixels.setPixelColor(start1_i, pixels.Color(r, g, b));
-  pixels.show();
 }
 
 void equalizer() {
@@ -237,4 +304,66 @@ void setSoundLevel(int pos, int level) {
   }
 }
 
+void randomMatrix() {
+  if (start1_i < RGB_NUMPIXELS) {
+    start1_i++;
+  } else {
+    start1_i = 0;
+  }
 
+  int r = random(0, 255);
+  int g = random(0, 255);
+  int b = random(0, 255);
+
+  pixels.setPixelColor(start1_i, pixels.Color(r, g, b));
+  pixels.show();
+}
+
+void rainbowMatrix() {
+  for (int i = 0; i < RGB_NUMPIXELS; i++) {
+    pixels.setPixelColor(i, Wheel(((i * 256 / RGB_NUMPIXELS) + ringPos) & 255));
+  }
+  pixels.show();
+
+  ringPos++;
+  if (ringPos == 1281) ringPos = 0;
+}
+
+
+// Rings
+void randomRings() {
+  if (start1_i < RGB_NUMPIXELS) {
+    start1_i++;
+  } else {
+    start1_i = 0;
+  }
+
+  int r = random(0, 255);
+  int g = random(0, 255);
+  int b = random(0, 255);
+
+  pixels.setPixelColor(start1_i, pixels.Color(r, g, b));
+  pixels.show();
+}
+
+void rainbowRings() {
+  for (int i = 0; i < RGB_RINGS_NUMPIXELS; i++) {
+    rings.setPixelColor(i, Wheel(((i * 256 / RGB_RINGS_NUMPIXELS) + ringPos) & 255));
+  }
+  rings.show();
+
+  ringPos++;
+  if (ringPos == 1281) ringPos = 0;
+}
+
+uint32_t Wheel(byte WheelPos) {
+  if (WheelPos < 85) {
+    return rings.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  } else if (WheelPos < 170) {
+    WheelPos -= 85;
+    return rings.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  } else {
+    WheelPos -= 170;
+    return rings.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+}

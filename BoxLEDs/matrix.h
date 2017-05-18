@@ -13,7 +13,7 @@ class mclass {
     mclass();
 
     void SETUP();
-    char* GET(int pos);
+    char* GET(int pos, String fileName);
 };
 
 extern mclass matrixFromFile;

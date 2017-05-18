@@ -62,15 +62,15 @@ char sel_matrix_keyboard;
 #define KEYBOARD_COLS   4
 
 char hexaKeys[KEYBOARD_ROWS][KEYBOARD_COLS] = {
-  {'1','4','7','*'},
-  {'2','5','8','0'},
-  {'3','6','9','#'},
-  {'A','B','C','D'}
+  {'1', '4', '7', '*'},
+  {'2', '5', '8', '0'},
+  {'3', '6', '9', '#'},
+  {'A', 'B', 'C', 'D'}
 };
 byte rowPins[KEYBOARD_ROWS] = {25, 24, 23, 22};
 byte colPins[KEYBOARD_COLS] = {29, 28, 27, 26};
 
-Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, KEYBOARD_ROWS, KEYBOARD_COLS); 
+Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, KEYBOARD_ROWS, KEYBOARD_COLS);
 
 void setup() {
   Serial.begin(9600);
@@ -106,18 +106,22 @@ void setup() {
   digitalWrite(34, LOW);
 }
 
-int start1_i = 0;
-
 void loop() {
-  char customKey = customKeypad.getKey();  
-  if (customKey){
+  char customKey = customKeypad.getKey();
+  if (customKey) {
     sel_matrix_keyboard = customKey;
-    Serial.println(customKey);
+
+    matrixWait == MATRIX_WAIT;
+    matrixPos = 0;
+    ringPos = 0;
   }
-  
+
   switch (sel_matrix_keyboard) {
     case '1':
-      heart();
+      heart("HEART.TXT", 19, 50);
+      break;
+    case '2':
+      heart("BOX.TXT", 126, 10);
       break;
     case 'B':
       randomMatrix();
@@ -138,17 +142,17 @@ void loop() {
   clockMatrix.PRINT_TIME();
 
   Serial.print(digitalRead(32));
-  Serial.print(digitalRead(33)); 
+  Serial.print(digitalRead(33));
   Serial.print(digitalRead(30));
   Serial.println(digitalRead(31));
 
   delay(1);
 }
 
-void heart() {
-  if (matrixWait == MATRIX_WAIT) {
+void heart(String fileName, int mPos, int wait) {
+  if (matrixWait >= wait) {
     char *p;
-    p = matrixFromFile.GET(matrixPos);
+    p = matrixFromFile.GET(matrixPos, fileName);
 
     if (matrixPos == 0) {
       int r = random(0, 255);
@@ -163,7 +167,7 @@ void heart() {
     }
 
     matrixPos++;
-    if (matrixPos == 19) {
+    if (matrixPos == mPos) {
       matrixPos = 0;
     }
 
@@ -305,17 +309,17 @@ void setSoundLevel(int pos, int level) {
 }
 
 void randomMatrix() {
-  if (start1_i < RGB_NUMPIXELS) {
-    start1_i++;
+  if (matrixPos < RGB_NUMPIXELS) {
+    matrixPos++;
   } else {
-    start1_i = 0;
+    matrixPos = 0;
   }
 
   int r = random(0, 255);
   int g = random(0, 255);
   int b = random(0, 255);
 
-  pixels.setPixelColor(start1_i, pixels.Color(r, g, b));
+  pixels.setPixelColor(matrixPos, pixels.Color(r, g, b));
   pixels.show();
 }
 
@@ -332,17 +336,17 @@ void rainbowMatrix() {
 
 // Rings
 void randomRings() {
-  if (start1_i < RGB_NUMPIXELS) {
-    start1_i++;
+  if (ringPos < RGB_RINGS_NUMPIXELS) {
+    ringPos++;
   } else {
-    start1_i = 0;
+    ringPos = 0;
   }
 
   int r = random(0, 255);
   int g = random(0, 255);
   int b = random(0, 255);
 
-  pixels.setPixelColor(start1_i, pixels.Color(r, g, b));
+  pixels.setPixelColor(ringPos, pixels.Color(r, g, b));
   pixels.show();
 }
 

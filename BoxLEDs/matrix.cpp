@@ -20,10 +20,10 @@ void mclass::SETUP() {
   Serial.println("initialization done.");
 }
 
-char* mclass::GET(int pos) {
+char* mclass::GET(int pos, String fileName) {
   static char r[65];
 
-  File myFile = SD.open("HEART.TXT", FILE_READ);
+  File myFile = SD.open(fileName, FILE_READ);
 
   if (myFile) {
     int chPos = 0;
@@ -56,11 +56,7 @@ char* mclass::GET(int pos) {
   } else {
     Serial.println("error opening clock.txt");
   }
-
-  //  for (int i = 0; i < 65; ++i) {
-  //    r[i] = char(i);
-  //  }
-
+  
   return r;
 }
 

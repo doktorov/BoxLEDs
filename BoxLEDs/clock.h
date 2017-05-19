@@ -26,7 +26,7 @@ class cclass {
   public:
     cclass();
 
-    void SETUP();
+    void SETUP(int sd);
     void PRINT_TIME();
 };
 

@@ -12,7 +12,7 @@ class mclass {
   public:
     mclass();
 
-    void SETUP();
+    void SETUP(int sd);
     char* GET(int pos, String fileName);
 };
 

@@ -3,21 +3,14 @@
 
 #include "SdFat.h"
 
-// SD
-#define SD_CS   35
-
 mclass::mclass() {
 
 }
 
-void mclass::SETUP() {
-  Serial.print("Initializing SD card...");
-
-  if (!SD.begin(SD_CS)) {
-    Serial.println("initialization failed!");
+void mclass::SETUP(int sd) {
+  if (!SD.begin(sd)) {
     return;
   }
-  Serial.println("initialization done.");
 }
 
 char* mclass::GET(int pos, String fileName) {

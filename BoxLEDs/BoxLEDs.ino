@@ -4,6 +4,9 @@
 #include <Adafruit_NeoPixel.h>
 #include <Keypad.h>
 
+// SD
+#define SD_CS   35
+
 // RGB 8x8
 #define RGB_PIN         A0
 #define RGB_NUMPIXELS   64
@@ -44,6 +47,7 @@ uint32_t second;
 int ringPos;
 
 char sel_matrix_keyboard;
+char sel_rings_keyboard;
 
 //
 #define KEYBOARD_ROWS   4
@@ -60,11 +64,14 @@ byte colPins[KEYBOARD_COLS] = {29, 28, 27, 26};
 
 Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, KEYBOARD_ROWS, KEYBOARD_COLS);
 
+
+byte selTypeRGB;
+
 void setup() {
   Serial.begin(9600);
 
-  clockMatrix.SETUP();
-  matrixFromFile.SETUP();
+  clockMatrix.SETUP(SD_CS);
+  matrixFromFile.SETUP(SD_CS);
 
   pixels.setBrightness(RGB_BRIGHTNESS);
   pixels.begin();
@@ -85,6 +92,9 @@ void setup() {
   ringPos = 0;
 
   sel_matrix_keyboard = 0;
+  sel_rings_keyboard = 0;
+
+  selTypeRGB = 1;
 
   pinMode(34, OUTPUT);
   pinMode(33, INPUT_PULLUP);
@@ -95,26 +105,51 @@ void setup() {
 }
 
 void loop() {
+  if (digitalRead(32) == 0) {
+    selTypeRGB = 1;
+  }
+  if (digitalRead(33) == 0) {
+    selTypeRGB = 2;
+  }
+
   char customKey = customKeypad.getKey();
   if (customKey) {
-    sel_matrix_keyboard = customKey;
+    switch (selTypeRGB) {
+      case 1:
+        if (sel_matrix_keyboard != customKey) {
+          sel_matrix_keyboard = customKey;
 
-    matrixWait == 0;
-    matrixPos = 0;
-    ringPos = 0;
+          pixels.begin();
+          pixels.show();
+          
+          matrixWait == 0;
+          matrixPos = 0;
+        }
+        break;
+      case 2:
+        if (sel_rings_keyboard != customKey) {
+          sel_rings_keyboard = customKey;
+
+          rings.begin();
+          rings.show();
+          
+          ringPos = 0;
+        }
+        break;
+    }
   }
 
   switch (sel_matrix_keyboard) {
     case '1':
-      heart("HEART.TXT", 19, 50);
+      heart("HEART.TXT", 156, 50);
       break;
     case '2':
-      heart("BOX.TXT", 126, 10);
+      heart("BOX.TXT", 207, 10);
+      break;
+    case 'A':
+      rainbowMatrix();
       break;
     case 'B':
-      rainbowMatrix();      
-      break;
-    case 'C':
       randomMatrix();
       break;
     case 'D':
@@ -125,14 +160,19 @@ void loop() {
       break;
   }
 
-  rainbowRings();
+  switch (sel_rings_keyboard) {
+    case 'A':
+      rainbowRings();
+      break;
+    case 'B':
+      randomRings();
+      break;
+    default:
+      rainbowRings();
+      break;
+  }
 
   clockMatrix.PRINT_TIME();
-
-  Serial.print(digitalRead(32));
-  Serial.print(digitalRead(33));
-  Serial.print(digitalRead(30));
-  Serial.println(digitalRead(31));
 
   delay(1);
 }
@@ -313,12 +353,12 @@ void randomMatrix() {
 
 void rainbowMatrix() {
   for (int i = 0; i < RGB_NUMPIXELS; i++) {
-    pixels.setPixelColor(i, Wheel(((i * 256 / RGB_NUMPIXELS) + ringPos) & 255));
+    pixels.setPixelColor(i, Wheel(((i * 256 / RGB_NUMPIXELS) + matrixPos) & 255));
   }
   pixels.show();
 
-  ringPos++;
-  if (ringPos == 1281) ringPos = 0;
+  matrixPos++;
+  if (matrixPos == 1281) matrixPos = 0;
 }
 
 
@@ -334,8 +374,8 @@ void randomRings() {
   int g = random(0, 255);
   int b = random(0, 255);
 
-  pixels.setPixelColor(ringPos, pixels.Color(r, g, b));
-  pixels.show();
+  rings.setPixelColor(ringPos, pixels.Color(r, g, b));
+  rings.show();
 }
 
 void rainbowRings() {

@@ -9,14 +9,11 @@
 #define CLOCK_DAT A3
 #define CLOCK_RST A4
 
-// SD
-#define SD_CS   35
-
 cclass::cclass() {
 
 }
 
-void cclass::SETUP() {
+void cclass::SETUP(int sd) {
   matrix.setIntensity(0);
   matrix.setRotation(3);
 
@@ -24,13 +21,9 @@ void cclass::SETUP() {
   time_min = -1;
   time_sec = -1;
 
-  Serial.print("Initializing SD card...");
-
-  if (!SD.begin(SD_CS)) {
-    Serial.println("initialization failed!");
+  if (!SD.begin(sd)) {
     return;
   }
-  Serial.println("initialization done.");
 }
 
 void cclass::PRINT_TIME() {

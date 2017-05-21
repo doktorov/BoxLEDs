@@ -8,7 +8,7 @@
 #define SD_CS   35
 
 // RGB 8x8
-#define RGB_PIN         A0
+#define RGB_PIN         6
 #define RGB_NUMPIXELS   64
 #define RGB_BRIGHTNESS  10
 
@@ -16,7 +16,7 @@ Adafruit_NeoPixel pixels = Adafruit_NeoPixel(RGB_NUMPIXELS, RGB_PIN, NEO_GRB + N
 //
 
 //
-#define RGB_RINGS_PIN         A1
+#define RGB_RINGS_PIN         7
 #define RGB_RINGS_NUMPIXELS   61
 #define RGB_RINGS_BRIGHTNESS  10
 
@@ -45,6 +45,7 @@ uint32_t second;
 //
 #define RING_WAIT 2
 int ringPos;
+uint32_t rnd_color;
 
 char sel_matrix_keyboard;
 char sel_rings_keyboard;
@@ -66,6 +67,17 @@ Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, KEYBOARD_R
 
 
 byte selTypeRGB;
+
+int runRings2Pos;
+int ringLevel;
+int ringDelay;
+
+#define RGB_RINGS_NUMPIXELS_24    61
+#define RGB_RINGS_NUMPIXELS_16    37
+#define RGB_RINGS_NUMPIXELS_12    21
+#define RGB_RINGS_NUMPIXELS_8     9
+
+#define RGB_RINGS_DELAY           50
 
 void setup() {
   Serial.begin(9600);
@@ -95,6 +107,12 @@ void setup() {
   sel_rings_keyboard = 0;
 
   selTypeRGB = 1;
+
+  ringPos = RGB_RINGS_NUMPIXELS_16;
+  ringLevel = 0;
+  ringDelay = RGB_RINGS_DELAY;
+
+  rnd_color = getRandomRingsRGB();
 
   pinMode(34, OUTPUT);
   pinMode(33, INPUT_PULLUP);
@@ -134,6 +152,12 @@ void loop() {
           rings.show();
 
           ringPos = 0;
+
+          runRings2Pos = RGB_RINGS_NUMPIXELS_16;
+          ringLevel = 0;
+          ringDelay = RGB_RINGS_DELAY;
+
+          rnd_color = getRandomRingsRGB();
         }
         break;
     }
@@ -167,14 +191,30 @@ void loop() {
     case 'B':
       randomRings();
       break;
+    case 'C':
+      randomRings1();
+      break;
+    case 'D':
+      runRings2();
+      break;
     default:
       rainbowRings();
       break;
   }
 
+  rings.show();
+
   clockMatrix.PRINT_TIME();
 
   delay(1);
+}
+
+uint32_t getRandomMatrixRGB() {
+  int r = random(0, 256);
+  int g = random(0, 256);
+  int b = random(0, 256);
+
+  return pixels.Color(r, g, b);
 }
 
 void heart(String fileName, int mPos, int wait) {
@@ -183,15 +223,9 @@ void heart(String fileName, int mPos, int wait) {
     p = matrixFromFile.GET(matrixPos, fileName);
 
     if (matrixPos == 0) {
-      int r = random(0, 255);
-      int g = random(0, 255);
-      int b = random(0, 255);
-      first = pixels.Color(r, g, b);
+      first = getRandomMatrixRGB();
 
-      r = random(0, 255);
-      g = random(0, 255);
-      b = random(0, 255);
-      second = pixels.Color(r, g, b);
+      second = getRandomMatrixRGB();
     }
 
     matrixPos++;
@@ -359,11 +393,7 @@ void randomMatrix() {
     matrixPos = 0;
   }
 
-  int r = random(0, 255);
-  int g = random(0, 255);
-  int b = random(0, 255);
-
-  pixels.setPixelColor(matrixPos, pixels.Color(r, g, b));
+  pixels.setPixelColor(matrixPos, getRandomMatrixRGB());
   pixels.show();
 }
 
@@ -379,6 +409,14 @@ void rainbowMatrix() {
 
 
 // Rings
+uint32_t getRandomRingsRGB() {
+  int r = random(0, 256);
+  int g = random(0, 256);
+  int b = random(0, 256);
+
+  return rings.Color(r, g, b);
+}
+
 void randomRings() {
   if (ringPos < RGB_RINGS_NUMPIXELS) {
     ringPos++;
@@ -386,19 +424,13 @@ void randomRings() {
     ringPos = 0;
   }
 
-  int r = random(0, 255);
-  int g = random(0, 255);
-  int b = random(0, 255);
-
-  rings.setPixelColor(ringPos, rings.Color(r, g, b));
-  rings.show();
+  rings.setPixelColor(ringPos, getRandomRingsRGB());
 }
 
 void rainbowRings() {
   for (int i = 0; i < RGB_RINGS_NUMPIXELS; i++) {
     rings.setPixelColor(i, Wheel(((i * 256 / RGB_RINGS_NUMPIXELS) + ringPos) & 255));
   }
-  rings.show();
 
   ringPos++;
   if (ringPos == 1281) ringPos = 0;
@@ -413,5 +445,92 @@ uint32_t Wheel(byte WheelPos) {
   } else {
     WheelPos -= 170;
     return rings.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+}
+
+void randomRings1() {
+  if (ringDelay == RGB_RINGS_DELAY) {
+    if (ringPos < RGB_RINGS_NUMPIXELS) {
+      ringPos++;
+    } else {
+      ringPos = 0;
+
+      rnd_color = getRandomRingsRGB();
+    }
+
+    rings.setPixelColor(ringPos, rnd_color);
+    ringDelay = 0;
+  } else {
+    ringDelay++;
+  }
+}
+
+void runRings2() {
+  if (ringDelay == RGB_RINGS_DELAY) {
+    if (ringLevel == 0) {
+      if (runRings2Pos < RGB_RINGS_NUMPIXELS_24) {
+        rings.setPixelColor(runRings2Pos, rnd_color);
+        runRings2Pos++;
+      } else {
+        runRings2Pos = RGB_RINGS_NUMPIXELS_12;
+
+        rnd_color = getRandomRingsRGB();
+
+        ringLevel = 1;
+      }
+    }
+
+    if (ringLevel == 1) {
+      if (runRings2Pos < RGB_RINGS_NUMPIXELS_16) {
+        rings.setPixelColor(runRings2Pos, rnd_color);
+        runRings2Pos++;
+      } else {
+        runRings2Pos = RGB_RINGS_NUMPIXELS_8;
+
+        rnd_color = getRandomRingsRGB();
+
+        ringLevel = 2;
+      }
+    }
+
+    if (ringLevel == 2) {
+      if (runRings2Pos < RGB_RINGS_NUMPIXELS_12) {
+        rings.setPixelColor(runRings2Pos, rnd_color);
+        runRings2Pos++;
+      } else {
+        runRings2Pos = 1;
+
+        rnd_color = getRandomRingsRGB();
+
+        ringLevel = 3;
+      }
+    }
+
+    if (ringLevel == 3) {
+      if (runRings2Pos < RGB_RINGS_NUMPIXELS_8) {
+        rings.setPixelColor(runRings2Pos, rnd_color);
+        runRings2Pos++;
+      } else {
+        runRings2Pos = 0;
+
+        rnd_color = getRandomRingsRGB();
+
+        ringLevel = 4;
+      }
+    }
+
+    if (ringLevel == 4) {
+      rings.setPixelColor(0, rnd_color);
+
+      rnd_color = getRandomRingsRGB();
+
+      runRings2Pos = RGB_RINGS_NUMPIXELS_16;
+
+      ringLevel = 0;
+    }
+
+    ringDelay = 0;
+  } else {
+    ringDelay++;
   }
 }
